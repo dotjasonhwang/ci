@@ -1,0 +1,19 @@
+# Shared lychee settings for the dotjasonhwang sites, read by hooks/pre-push.sh and
+# .github/workflows/link-check.yml. Mail links and example domains are skipped by default.
+
+no_progress = true
+timeout = 30
+max_retries = 3
+fallback_extensions = ["html"]
+
+# Results are cached in .lycheecache for a day
+cache = true
+
+# These block bots, so they'd always fail. Anchored to the host: a bare 'x\.com' would also match netflix.com.
+exclude = [
+  '^https?://([^/]+\.)?linkedin\.com(/|$)',
+  '^https?://([^/]+\.)?facebook\.com(/|$)',
+  '^https?://([^/]+\.)?twitter\.com(/|$)',
+  '^https?://([^/]+\.)?x\.com(/|$)',
+  '^https?://([^/]+\.)?instagram\.com(/|$)',
+]

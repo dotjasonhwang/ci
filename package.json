@@ -1,0 +1,14 @@
+{
+  "name": "@dotjasonhwang/ci",
+  "version": "1.0.0",
+  "description": "Shared CI workflows and git hooks for the dotjasonhwang sites",
+  "license": "MIT",
+  "private": true,
+  "bin": {
+    "djh-pre-push": "hooks/pre-push.sh"
+  },
+  "files": [
+    "hooks",
+    "lychee.toml"
+  ]
+}

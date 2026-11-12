@@ -38,6 +38,14 @@ jobs:
       - name: Install dependencies
         run: ${{ inputs.package-manager == 'pnpm' && 'pnpm install --frozen-lockfile' || 'npm ci' }}
 
+      # Shared with the pre-push hook, so the site must have @dotjasonhwang/ci as a devDependency
+      - name: Check for the shared lychee config
+        run: |
+          test -f node_modules/@dotjasonhwang/ci/lychee.toml || {
+            echo "::error::node_modules/@dotjasonhwang/ci/lychee.toml not found. Add @dotjasonhwang/ci as a devDependency."
+            exit 1
+          }
+
       - name: Build site
         run: ${{ inputs.package-manager }} run build
 
@@ -56,21 +64,12 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           # Every link in the built site: internal ones resolve against dist/ (like the pre-push hook),
-          # external ones are fetched. Mail links are skipped by default. The social sites block
-          # bots, so they'd always fail.
+          # external ones are fetched. Excludes, timeouts and retries are in the shared lychee.toml.
           args: |
             --verbose
-            --no-progress
+            --config node_modules/@dotjasonhwang/ci/lychee.toml
             --root-dir ${{ github.workspace }}/dist
-            --fallback-extensions html
-            --exclude 'linkedin.com'
-            --exclude 'facebook.com'
-            --exclude 'twitter.com'
-            --exclude 'instagram.com'
-            --exclude 'x.com'
             ${{ steps.site.outputs.host-re && format('--exclude ''^https?://(www\.)?{0}(/|$)''', steps.site.outputs.host-re) || '' }}
-            --timeout 30
-            --max-retries 3
             ${{ inputs.extra-args }}
             dist
           fail: true
