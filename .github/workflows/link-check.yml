@@ -1,0 +1,72 @@
+name: Link check
+
+# Called by each site's .github/workflows/ci.yml on push, PRs, the weekly schedule and manual runs.
+on:
+  workflow_call:
+    inputs:
+      package-manager:
+        description: 'pnpm or npm'
+        type: string
+        default: pnpm
+      extra-args:
+        description: 'Extra lychee arguments, one per line (e.g. --exclude some-domain.com)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  link-check:
+    name: Check links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install dependencies
+        run: ${{ inputs.package-manager == 'pnpm' && 'pnpm install --frozen-lockfile' || 'npm ci' }}
+
+      - name: Build site
+        run: ${{ inputs.package-manager }} run build
+
+      - name: Serve site
+        run: |
+          ${{ inputs.package-manager == 'pnpm' && 'pnpm dlx' || 'npx --yes' }} serve dist -p 3000 &
+          sleep 5
+
+      - name: Check links with lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # The built site, plus links in the source files
+          args: |
+            --verbose
+            --no-progress
+            --exclude-mail
+            --exclude 'linkedin.com'
+            --exclude 'facebook.com'
+            --exclude 'twitter.com'
+            --exclude 'instagram.com'
+            --exclude 'example.com'
+            --exclude 'yourdomain.com'
+            --exclude 'yourbusiness'
+            --exclude 'localhost'
+            --exclude '127.0.0.1'
+            --timeout 30
+            --max-retries 3
+            ${{ inputs.extra-args }}
+            http://localhost:3000
+            ./src/
+          fail: true
+          jobSummary: true

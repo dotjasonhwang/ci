@@ -1,0 +1,90 @@
+name: Site CI
+
+# Called by each site's .github/workflows/ci.yml. Runs in the calling repo:
+# checkout, .nvmrc and the lockfile all come from the site.
+on:
+  workflow_call:
+    inputs:
+      package-manager:
+        description: 'pnpm or npm'
+        type: string
+        default: pnpm
+      run-check:
+        description: 'Run `<package-manager> run check` (astro check + eslint + prettier)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check, test and build
+    runs-on: ubuntu-latest
+    # github.event_name is the caller's event
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install dependencies
+        run: ${{ inputs.package-manager == 'pnpm' && 'pnpm install --frozen-lockfile' || 'npm ci' }}
+
+      - name: Run checks
+        if: inputs.run-check
+        run: ${{ inputs.package-manager }} run check
+
+      - name: Run unit tests
+        run: ${{ inputs.package-manager }} test
+
+      - name: Build
+        run: ${{ inputs.package-manager }} run build
+
+  e2e:
+    name: E2E (all browsers)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: ${{ inputs.package-manager }}
+
+      - name: Install dependencies
+        run: ${{ inputs.package-manager == 'pnpm' && 'pnpm install --frozen-lockfile' || 'npm ci' }}
+
+      - name: Install Playwright browsers
+        run: ${{ inputs.package-manager == 'pnpm' && 'pnpm exec' || 'npx' }} playwright install --with-deps
+
+      - name: Run E2E tests
+        run: ${{ inputs.package-manager }} run test:e2e:full
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
