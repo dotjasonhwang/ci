@@ -14,7 +14,7 @@ Check, unit test and build on push and PRs; Playwright E2E on PRs and manual run
 
 ## `link-check.yml`
 
-Builds and serves the site, then checks links in it and in `./src/` with lychee.
+Builds the site, then checks every link in `dist/` with lychee: internal links resolve against `dist/`, external ones are fetched.
 
 | Input             | Type   | Default | Description                                                     |
 | ----------------- | ------ | ------- | --------------------------------------------------------------- |
