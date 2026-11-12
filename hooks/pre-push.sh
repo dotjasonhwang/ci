@@ -4,7 +4,7 @@
 #   pnpm exec djh-pre-push --skip-check  (sites whose `check` script doesn't pass yet)
 #
 # Runs, stopping at the first failure: check (astro + eslint + prettier), unit tests, build,
-# link check (internal + external, lychee) and E2E. Git runs hooks from the repo root.
+# link check (internal only, lychee) and E2E. Git runs hooks from the repo root.
 
 skip_check=0
 for arg in "$@"; do
@@ -47,15 +47,10 @@ $run test || fail "Unit tests failed."
 echo "🔨 Building..."
 $run build || fail "Build failed."
 
-# Internal links resolve against dist/; external links are fetched (cached for a day in .lycheecache).
-# The site's own domain (from the built sitemap) is skipped: its pages are checked as files in dist/,
-# and production doesn't have a page this push adds until Netlify deploys it.
-site_re=$(grep -ho '<loc>[^<]*' dist/sitemap-index.xml dist/sitemap.xml 2>/dev/null | head -1 \
-  | sed -E 's#^<loc>https?://(www\.)?([^/]+).*#\2#; s/\./\\./g')
-echo "🔗 Checking links..."
-lychee --config "$lychee_config" --root-dir "$(pwd)/dist" \
-  ${site_re:+--exclude "^https?://(www\.)?$site_re(/|\$)"} \
-  dist || fail "Broken links."
+# Internal links only, resolved against dist/. External links are left to CI (link-check.yml on
+# push, PRs and weekly), so a third-party outage can't block a push.
+echo "🔗 Checking internal links..."
+lychee --config "$lychee_config" --offline --root-dir "$(pwd)/dist" dist || fail "Broken links."
 
 # dist/ was just built; sites whose Playwright config builds first skip that with E2E_SKIP_BUILD
 echo "🌐 Running E2E tests..."

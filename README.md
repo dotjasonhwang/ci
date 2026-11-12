@@ -49,8 +49,9 @@ jobs:
 
 ## Pre-push hook
 
-`djh-pre-push` runs check, unit tests, build, the link check and E2E, stopping at the first
-failure. It needs [lychee](https://lychee.cli.rs) (`brew install lychee`). In `.husky/pre-push`:
+`djh-pre-push` runs check, unit tests, build, an internal-only link check and E2E, stopping
+at the first failure. External links are left to `link-check.yml`. It needs
+[lychee](https://lychee.cli.rs) (`brew install lychee`). In `.husky/pre-push`:
 
 ```sh
 pnpm exec djh-pre-push               # or `npx djh-pre-push` in npm repos
