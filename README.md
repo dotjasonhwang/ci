@@ -37,7 +37,19 @@ Builds the site, then checks every link in `dist/` with lychee: internal links r
 | `package-manager` | string | `pnpm`  | `pnpm` or `npm`                                                 |
 | `extra-args`      | string | `''`    | Extra lychee arguments, one per line (e.g. `--exclude some-domain.com`) |
 
+Each site's `.github/workflows/ci.yml` sets the triggers. The monthly run is a link check only:
+`site-ci.yml`'s jobs skip scheduled runs.
+
 ```yaml
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 6 1 * *' # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
 jobs:
   ci:
     uses: dotjasonhwang/ci/.github/workflows/site-ci.yml@v1

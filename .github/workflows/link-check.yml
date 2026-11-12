@@ -1,6 +1,6 @@
 name: Link check
 
-# Called by each site's .github/workflows/ci.yml on push, PRs, the weekly schedule and manual runs.
+# Called by each site's .github/workflows/ci.yml on push, PRs, the monthly schedule and manual runs.
 on:
   workflow_call:
     inputs:

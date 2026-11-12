@@ -48,7 +48,7 @@ echo "🔨 Building..."
 $run build || fail "Build failed."
 
 # Internal links only, resolved against dist/. External links are left to CI (link-check.yml on
-# push, PRs and weekly), so a third-party outage can't block a push.
+# push, PRs and monthly), so a third-party outage can't block a push.
 echo "🔗 Checking internal links..."
 lychee --config "$lychee_config" --offline --root-dir "$(pwd)/dist" dist || fail "Broken links."
 
