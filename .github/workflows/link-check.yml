@@ -41,11 +41,23 @@ jobs:
       - name: Build site
         run: ${{ inputs.package-manager }} run build
 
+      # The site's own domain (from the built sitemap) is skipped: its pages are checked as
+      # files in dist/, and production doesn't have a page this push adds until Netlify deploys it.
+      # No sitemap means no exclude.
+      - name: Find the site's own domain
+        id: site
+        run: |
+          host=$(grep -ho '<loc>[^<]*' dist/sitemap-index.xml dist/sitemap.xml 2>/dev/null | head -1 \
+            | sed -E 's#^<loc>https?://(www\.)?([^/]+).*#\2#; s/\./\\./g' || true)
+          echo "Own domain: ${host:-none found}"
+          echo "host-re=$host" >> "$GITHUB_OUTPUT"
+
       - name: Check links with lychee
         uses: lycheeverse/lychee-action@v2
         with:
           # Every link in the built site: internal ones resolve against dist/ (like the pre-push hook),
-          # external ones are fetched. Mail links are skipped by default.
+          # external ones are fetched. Mail links are skipped by default. The social sites block
+          # bots, so they'd always fail.
           args: |
             --verbose
             --no-progress
@@ -55,9 +67,8 @@ jobs:
             --exclude 'facebook.com'
             --exclude 'twitter.com'
             --exclude 'instagram.com'
-            --exclude 'example.com'
-            --exclude 'yourdomain.com'
-            --exclude 'yourbusiness'
+            --exclude 'x.com'
+            ${{ steps.site.outputs.host-re && format('--exclude ''^https?://(www\.)?{0}(/|$)''', steps.site.outputs.host-re) || '' }}
             --timeout 30
             --max-retries 3
             ${{ inputs.extra-args }}
